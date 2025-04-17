@@ -9,14 +9,14 @@ from nltk.stem import WordNetLemmatizer
 from nltk.data import find
 from streamlit_chat import message
 
-# Ensure required downloads
+# Ensure required NLTK resources are available
 try:
     find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
 nltk.download('wordnet')
 
-# Load chatbot assets
+# Load model and data
 model = tf.keras.models.load_model("chatbotmodel.h5")
 intents = json.load(open("breastCancer.json"))
 words = pickle.load(open("words.pkl", "rb"))
@@ -24,7 +24,7 @@ classes = pickle.load(open("classes.pkl", "rb"))
 
 lemmatizer = WordNetLemmatizer()
 
-# NLP functions
+# Helper functions
 def clean_up_sentence(sentence):
     sentence_words = nltk.word_tokenize(sentence)
     sentence_words = [lemmatizer.lemmatize(word.lower()) for word in sentence_words]
@@ -59,7 +59,7 @@ def get_response(intents_list):
 # Streamlit UI config
 st.set_page_config(page_title="Breast Cancer Chatbot", layout="centered")
 
-# Custom CSS for dark theme & link colors
+# Custom CSS for dark mode styling
 st.markdown("""
     <style>
     body {
@@ -78,18 +78,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Header Image (reliable one)
-st.image("https://cdn.pixabay.com/photo/2020/04/16/10/17/ai-5058110_1280.jpg", use_container_width=True)
-
 # Title and subtitle
-st.markdown("<h2 style='text-align: center; color: #E91E63;'>🩺 Breast Cancer Awareness Chatbot</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Ask me questions about breast cancer, symptoms, diagnosis, or treatment options.</p>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: #E91E63;'>🩺 Breast Cancer Chatbot</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Hi, Feel free to ask me questions about breast cancer.</p>", unsafe_allow_html=True)
 
-# Chat history tracking
+# Track conversation state
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
-# Chat input box
+# Input field for user
 user_input = st.chat_input("Type your question here...")
 
 if user_input:
@@ -97,9 +94,9 @@ if user_input:
     st.session_state.chat_history.append(("user", user_input))
     st.session_state.chat_history.append(("bot", response))
 
-# Display chat
-for sender, message_text in st.session_state.chat_history:
+# Render chat history
+for i, (sender, message_text) in enumerate(st.session_state.chat_history):
     if sender == "user":
-        message(message_text, is_user=True, key=f"user_{message_text}")
+        message(message_text, is_user=True, key=f"user_{i}")
     else:
-        message(message_text, key=f"bot_{message_text}")
+        message(message_text, key=f"bot_{i}")
