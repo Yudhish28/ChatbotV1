@@ -7,16 +7,16 @@ import tensorflow as tf
 import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.data import find
+from streamlit_chat import message
 
+# Download required NLTK data
 try:
     find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
 nltk.download('wordnet')
-nltk.download('punkt_tab')
 
-
-# Load files
+# Load model and data
 model = tf.keras.models.load_model("chatbotmodel.h5")
 intents = json.load(open("breastCancer.json"))
 words = pickle.load(open("words.pkl", "rb"))
@@ -52,17 +52,35 @@ def get_response(intents_list):
         tag = intents_list[0]['intent']
         for intent in intents['intents']:
             if intent['tags'] == tag:
-                # If responses is a string, return it; if it's a list, choose randomly
                 responses = intent['responses']
                 return responses if isinstance(responses, str) else random.choice(responses)
     return "Sorry, I didn't understand that."
 
-# Streamlit interface
-st.title("Breast Cancer Chatbot")
+# Streamlit UI
+st.set_page_config(page_title="Breast Cancer AI Chatbot", layout="centered")
 
-user_input = st.text_input("You:")
+# Display header image
+st.image("https://images.unsplash.com/photo-1588776814546-ec7b9c1d77b6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80", use_column_width=True)
 
+st.markdown("<h2 style='text-align: center; color: #C2185B;'>🤖 Breast Cancer Awareness Chatbot</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Ask me anything about breast cancer, symptoms, diagnosis, or treatment.</p>", unsafe_allow_html=True)
+
+# Session state for chat history
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
+# Input text box
+user_input = st.chat_input("Type your question here...")
+
+# Handle input
 if user_input:
-    intents_list = predict_class(user_input)
-    response = get_response(intents_list)
-    st.text_area("Bot:", value=response, height=100)
+    response = get_response(predict_class(user_input))
+    st.session_state.chat_history.append(("user", user_input))
+    st.session_state.chat_history.append(("bot", response))
+
+# Display chat history
+for sender, message_text in st.session_state.chat_history:
+    if sender == "user":
+        message(message_text, is_user=True, key=f"user_{message_text}")
+    else:
+        message(message_text, key=f"bot_{message_text}")
